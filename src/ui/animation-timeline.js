@@ -56,8 +56,8 @@ export function buildEncounterTimeline(before,after,{command=null,quality='balan
     const old=previous.get(unit.id);if(!visible(old))continue;
     if(old.x!==unit.x||old.y!==unit.y){
       const path=movementPath(before,after,old,unit),steps=Math.max(1,path.length-1),start=command?.unitId===unit.id?0:Math.min(100,stagger++*18);
-      addTrack(unit,cavalry(unit)?'cavalry-move':steps>=3?'run':'walk',start,Math.min(500,200+steps*55),{path,from:position(old),to:position(unit)});
-      addEffect({type:'dust',at:position(old),to:position(unit),path,surfaces:path.map(p=>before.terrain?.[p.y]?.[p.x]??'earth'),start,duration:Math.min(500,200+steps*55),essential:false});
+      addTrack(unit,cavalry(unit)?'cavalry-move':steps>=3?'run':'walk',start,Math.min(750,180+steps*150),{path,from:position(old),to:position(unit)});
+      addEffect({type:'dust',at:position(old),to:position(unit),path,surfaces:path.map(p=>before.terrain?.[p.y]?.[p.x]??'earth'),start,duration:Math.min(750,180+steps*150),essential:false});
     }else if(old.facing!==unit.facing&&directions.includes(unit.facing))addTrack(unit,'turn',0,260);
     if(!old.braced&&unit.braced)addTrack(unit,'brace',0,420);
     if(unit.formation&&unit.formation!==old.formation){addTrack(unit,'formation',30,460,{formation:unit.formation});addEffect({type:'ring',at:position(unit),start:90,duration:330,formation:unit.formation,essential:true});}
@@ -71,37 +71,49 @@ export function buildEncounterTimeline(before,after,{command=null,quality='balan
   const oldLog=before.log??[],newLog=after.log??[];let overlap=Math.min(oldLog.length,newLog.length);
   while(overlap&&!oldLog.slice(-overlap).every((line,i)=>line===newLog[i]))overlap--;
   const recordedEvents=newLog.length?newLog.slice(overlap):(!command||command.action==='endTurn'?after.turnEvents??[]:[]);
+  const namedPositions=new Map();
   for(const line of recordedEvents){
-    const match=after.units.filter(u=>visible(u)&&visible(previous.get(u.id))).sort((a,b)=>(b.name?.length??0)-(a.name?.length??0)).find(u=>u.name&&line.startsWith(u.name+' '));if(!match)continue;
-    const victim=after.units.find(u=>visible(u)&&u.id!==match.id&&u.name&&line.includes(u.name));
+    // Reused troop names cannot resurrect an already-withdrawn token. A move
+    // explicitly naming a destination can disambiguate subsequent prose; when
+    // several living names remain ambiguous, leave the result effect alone.
+    let candidates=after.units.filter(u=>visible(u)&&visible(previous.get(u.id))&&living(previous.get(u.id))&&u.name&&line.startsWith(u.name+' ')).sort((a,b)=>b.name.length-a.name.length);
+    if(!candidates.length)continue;const name=candidates[0].name;candidates=candidates.filter(u=>u.name===name);
+    const destination=/ moves to (\d+)([A-Z])\b/.exec(line);if(destination){namedPositions.set(name,{x:Number(destination[1])-1,y:destination[2].charCodeAt(0)-65});continue;}
+    const named=namedPositions.get(name);if(named&&candidates.length>1)candidates=candidates.filter(u=>u.x===named.x&&u.y===named.y);
+    if(candidates.length!==1)continue;const match=candidates[0];
+    const consequence=line.slice(name.length+1);
+    let victims=after.units.filter(u=>visible(u)&&visible(previous.get(u.id))&&living(previous.get(u.id))&&u.id!==match.id&&u.name&&consequence.includes(u.name)).sort((a,b)=>b.name.length-a.name.length);
+    if(victims.length){victims=victims.filter(u=>u.name===victims[0].name);if(victims.length>1){const changed=victims.filter(u=>(u.resolve??u.hp??0)<(previous.get(u.id).resolve??previous.get(u.id).hp??0));if(changed.length===1)victims=changed;}}
+    const victim=victims.length===1?victims[0]:null;
     if(actionEvents.some(e=>e.actor.id===match.id&&['strike','throw'].includes(e.action)))continue;
     if(/ (hits|strikes) /.test(line)&&victim)actionEvents.push({actor:match,target:victim,action:match.role==='archer'?'throw':'strike'});
     else if(/ (attacks|challenges) /.test(line)&&victim)actionEvents.push({actor:match,target:victim,action:line.includes('Resolve')?'denounce':'persuade'});
   }
   const impactTimes=new Map(),impactSources=new Map();
   for(const event of actionEvents.slice(0,12)){
-    const {actor,target,action}=event,start=Math.min(620,endOfMove(actor.id)+30),political=after.kind==='contest';
+    const {actor,target,action}=event,start=Math.min(800,endOfMove(actor.id)+40),political=after.kind==='contest';
     let pose=political?'speak':action==='strike'?cavalry(actor)?'cavalry-attack':'attack':action==='throw'?'throw':action==='brace'?'brace':action==='rally'?'rally':action==='order'?'order':action==='formation'?'order':action==='assist'?'rally':'order';
-    const t=addTrack(actor,pose,start,action==='throw'?470:420,{action,target:target&&position(target),formation:command?.formation});if(!t)continue;
-    // The painted throw reaches release at 54% of its 470ms keypose.
-    const release=254,flight=210,impact=start+(action==='throw'?release+flight:180);
-    if(target&&target.id!==actor.id){impactTimes.set(target.id,Math.max(impactTimes.get(target.id)??0,impact));impactSources.set(target.id,position(actor));}
-    if(!political&&action==='strike'&&target)addEffect({type:'slash',from:position(actor),to:position(target),start:start+115,duration:180,essential:false});
+    const t=addTrack(actor,pose,start,action==='brace'?460:620,{action,target:target&&position(target),formation:command?.formation});if(!t)continue;
+    // Six authored poses: anticipation, contact and follow-through have time
+    // to read. The throw's fourth frame releases at 50%, then the missile flies.
+    const release=310,flight=230,impact=start+(action==='throw'?release+flight:230);
+    if(target&&target.id!==actor.id&&impact>=(impactTimes.get(target.id)??0)){impactTimes.set(target.id,impact);impactSources.set(target.id,position(actor));}
+    if(!political&&action==='strike'&&target)addEffect({type:'slash',from:position(actor),to:position(target),start:start+190,duration:160,essential:false});
     if(action==='throw'&&target)addEffect({type:'projectile',projectile:actor.role==='archer'?'arrow':'javelin',from:position(actor),to:position(target),start:start+release,duration:flight,essential:true});
     if(political)addEffect({type:'speech',at:position(actor),to:target&&position(target),action,start:start+70,duration:310,essential:true});
     else if(['rally','order','formation','assist','scout'].includes(action))addEffect({type:'ring',at:position(actor),action,start:start+90,duration:330,essential:true});
-    if(command?.action==='formation'||command?.action==='order')for(const unit of after.units.filter(u=>visible(u)&&u.side==='ally'&&u.ordered&&!previous.get(u.id)?.ordered))addTrack(unit,command.action==='formation'?'formation':'order',Math.min(endOfMove(unit.id)+20,620),420,{formation:unit.formation,action:command.orderAction});
+    if(command?.action==='formation'||command?.action==='order')for(const unit of after.units.filter(u=>visible(u)&&u.side==='ally'&&u.ordered&&!previous.get(u.id)?.ordered&&!actionEvents.some(a=>a.actor.id===u.id&&['strike','throw'].includes(a.action))))addTrack(unit,command.action==='formation'?'formation':'order',Math.min(endOfMove(unit.id)+20,800),460,{formation:unit.formation,action:command.orderAction});
   }
   for(const unit of after.units.filter(visible).slice(0,40)){
     const old=previous.get(unit.id);if(!visible(old))continue;const delta=(unit.resolve??unit.hp??0)-(old.resolve??old.hp??0),start=impactTimes.get(unit.id)??Math.min(650,endOfMove(unit.id)+180);
-    if(delta<0){addTrack(unit,living(unit)?'hit':'retreat',start,living(unit)?280:410,{withdrawn:!living(unit),source:impactSources.get(unit.id)});addEffect({type:old.braced?'shield':'impact',at:position(unit),source:impactSources.get(unit.id),start,duration:230,essential:true,defended:!!old.braced,political:after.kind==='contest',delta});}
+    if(delta<0){addTrack(unit,living(unit)?'hit':'retreat',start,living(unit)?360:480,{withdrawn:!living(unit),source:impactSources.get(unit.id)});addEffect({type:old.braced?'shield':'impact',at:position(unit),source:impactSources.get(unit.id),start,duration:230,essential:true,defended:!!old.braced,political:after.kind==='contest',delta});}
     else if(delta>0)addEffect({type:'ring',at:position(unit),start,duration:300,essential:true,healing:true});
     for(const stat of ['morale','stance'])if(Number.isFinite(old[stat])&&Number.isFinite(unit[stat])&&old[stat]!==unit[stat])addEffect({type:stat,at:position(unit),delta:unit[stat]-old[stat],start,duration:310,essential:true});
     if(unit.side!==old.side)addEffect({type:'allegiance',at:position(unit),start:180,duration:420,essential:true});
   }
   if(after.status!==before.status&&['won','lost'].includes(after.status))addEffect({type:after.status==='won'?'victory':'defeat',at:{x:3.5,y:3.5},start:350,duration:500,essential:true});
   const boundedEffects=effects.sort((a,b)=>Number(b.essential)-Number(a.essential)||a.start-b.start).slice(0,budget.effects);
-  const duration=Math.min(1100,Math.max(0,...tracks.map(t=>t.start+t.duration),...boundedEffects.map(t=>t.start+t.duration)));
+  const duration=Math.min(1700,Math.max(0,...tracks.map(t=>t.start+t.duration),...boundedEffects.map(t=>t.start+t.duration)));
   return {duration,tracks:tracks.slice(0,96),effects:boundedEffects,units,quality:quality in MOTION_BUDGETS?quality:'balanced'};
 }
 
@@ -124,7 +136,7 @@ export function sampleEncounterTimeline(timeline,elapsed=0){
   for(const[id,pair]of Object.entries(timeline.units)){
     const {before,after}=pair,moves=timeline.tracks.filter(t=>t.unitId===id&&t.path),move=moves[0];
     let pose={...idlePose(after,time),x:after.x,y:after.y,facing:after.facing??before.facing??'east',previousFacing:before.facing??'east',turnProgress:clamp(time/220)};
-    if(move){const p=clamp((time-move.start)/move.duration),sample=samplePath(move.path,smooth(p));pose.x=sample.x;pose.y=sample.y;if(time<move.start+move.duration){const next=move.path[Math.min(move.path.length-1,sample.segment+1)];pose={...pose,pose:move.pose,phase:p<.12?'anticipation':p>.88?'recovery':'impact',progress:p,stridePhase:smooth(p)*Math.max(1,move.path.length-1)*Math.PI*2,facing:facing(sample,next,pose.facing),bob:Math.sin(p*Math.PI*Math.max(2,move.path.length-1)*2)*(move.pose==='cavalry-move'?1.6:1.1),lean:move.pose==='run'?.06:0};}else{pose.x=after.x;pose.y=after.y;}}
+    if(move){const p=clamp((time-move.start)/move.duration),sample=samplePath(move.path,smooth(p));pose.x=sample.x;pose.y=sample.y;if(time<move.start+move.duration){const next=move.path[Math.min(move.path.length-1,sample.segment+1)];pose={...pose,pose:move.pose,phase:p<.12?'anticipation':p>.88?'recovery':'impact',progress:p,stridePhase:smooth(p)*Math.max(1,move.path.length-1)*Math.PI,facing:facing(sample,next,pose.facing),bob:Math.sin(p*Math.PI*Math.max(2,move.path.length-1)*2)*(move.pose==='cavalry-move'?1.6:1.1),lean:move.pose==='run'?.06:0};}else{pose.x=after.x;pose.y=after.y;}}
     const actions=timeline.tracks.filter(t=>t.unitId===id&&!t.path&&time>=t.start&&time<t.start+t.duration);
     for(const track of actions){const progress=clamp((time-track.start)/track.duration);pose={...pose,...actionPose(track,progress)};if(track.target)pose.facing=facing(pose,track.target,pose.facing);
       const anchor=track.pose==='hit'?track.source:['attack','cavalry-attack'].includes(track.pose)?track.target:null;

@@ -1,6 +1,8 @@
 import {createAssetLoader,constrainedConnection,prefetchFiles} from './asset-loader.js';
+import {PRESENTATION_BUDGET} from './presentation-budget.js';
+import {animationAssets} from './sprite-frames.js';
 // Presentation assets never infer or award campaign milestones.
-const artLoader=createAssetLoader();
+const artLoader=createAssetLoader({maxEntries:PRESENTATION_BUDGET.decodedEntries,maxBytes:PRESENTATION_BUDGET.decodedBytes});
 export function heroPortrait(rank='Tiro') {
   const r=rank.toLowerCase();
   const stage=r==='augustus'?'emperor':r==='senator'?'senator':/praeses|governor|candidate/.test(r)?'governor':/praefectus|praepositus|acting commander|dux/.test(r)?'prefect':/centurio|primus/.test(r)?'centurion':r==='tiro'?'recruit':'miles';
@@ -30,8 +32,19 @@ export function chapterAssets(chapter=1) {
   if(n===12)files.push('./assets/scenes/accession.webp');
   if(n!==11)files.push('./assets/tactical/units-roman.webp','./assets/tactical/units-frontier.webp','./assets/tactical/units-specialists.webp');
   if([2,3,4,6,7,8,10,11,12].includes(n))files.push('./assets/tactical/units-civic.webp');
-  files.push('./assets/tactical/environment-props.webp');
+  files.push('./assets/tactical/environment-props.webp','./assets/world/ground-materials.webp','./assets/world/natural-props.webp','./assets/world/camp-props.webp');
+  if(n!==11)files.push(...animationAssets(n,false));
+  files.push(...animationAssets(n,true));
   return [...new Set(files.filter(Boolean))];
+}
+// Offline resources include code and textures; chapterAssets above stays image-
+// only because its consumers decode every entry through the artwork Image loader.
+export function chapterOfflineAssets(chapter,availableFiles=[]) {
+  // A restored later chapter may be the first one visited on this device.
+  // Every chapter therefore owns the shared renderer dependencies; the worker
+  // deduplicates their URLs, so subsequent chapters reuse the same cached bytes.
+  const shared3D=availableFiles.filter(path=>path!=='./src/showcase/showcase.css'&&['./src/showcase/','./assets/showcase/','./vendor/three/'].some(prefix=>path.startsWith(prefix)));
+  return [...new Set([...chapterAssets(chapter),...shared3D])];
 }
 let chapterRequest=0;
 export async function prefetchChapter(chapter,{next=true,onProgress,retry=false,connection=globalThis.navigator?.connection,shouldPrefetchNext=()=>true}={}) {
