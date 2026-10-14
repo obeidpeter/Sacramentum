@@ -10,9 +10,9 @@ function setup(api,chapter,id,seed){const {game:g,data,debug}=api,s=debug.debugJ
 const near=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 function beginner(api,s){const g=api.game;
  for(let i=0;i<25&&s.encounter.status==='active';i++){const e=s.encounter,h=e.units.find(u=>u.id==='hero'),enemies=e.units.filter(u=>u.side==='enemy'&&u.hp>0&&!u.hidden),ally=e.units.find(u=>u.side==='ally'&&u.hp>0),nearest=[...enemies].sort((a,b)=>near(h,a)-near(h,b))[0];
-  const issue=(action,targets=g.getTargets(s,h.id,action))=>{if(!g.getActions(s,h.id).includes(action)||!targets.length)return false;api.auto.command(s,h,action,targets[0]);return true;};
-  if(!g.getTargets(s,h.id,'strike').length&&!g.getTargets(s,h.id,'throw').length&&nearest){const positions=g.getTargets(s,h.id,'move');positions.sort((a,b)=>near(a,nearest)-near(b,nearest)+(ally?(near(a,ally)-near(b,ally))*.15:0));issue('move',positions);}
-  if(h.hp<=8&&enemies.filter(u=>near(h,u)<=2).length>1)issue('brace');
+  const issue=(action,targets=[...g.getTargets(s,h.id,action)].sort((a,b)=>(e.units.find(u=>u.id===a.unitId)?.hp??99)-(e.units.find(u=>u.id===b.unitId)?.hp??99)))=>{if(!g.getActions(s,h.id).includes(action)||!targets.length)return false;api.auto.command(s,h,action,targets[0]);return true;};
+  if(!g.getTargets(s,h.id,'strike').length&&(!g.getTargets(s,h.id,'throw').length||h.hp>12)&&nearest){const positions=g.getTargets(s,h.id,'move');positions.sort((a,b)=>near(a,nearest)-near(b,nearest)+(ally?(near(a,ally)-near(b,ally))*.15:0));issue('move',positions);}
+  if(h.hp<=8&&enemies.filter(u=>near(h,u)<=2).length>1&&!g.getTargets(s,h.id,'strike').some(t=>(e.units.find(u=>u.id===t.unitId)?.hp??99)<=4))issue('brace');
   issue('strike');issue('throw');if(!h.acted)issue('brace');if(e.status==='active')g.endTurn(s);
  }return {status:s.encounter.status,turns:s.encounter.turn,losses:s.encounter.units.filter(u=>u.side==='ally'&&u.hp<=0).length,heroHealth:s.encounter.units.find(u=>u.id==='hero').hp};}
 function objective(e){const m=e.mission;if(e.status==='won')return 1;if(m.points.length)return m.points.filter(p=>p.secured).length/m.points.length;if(m.mode==='hold')return m.holdProgress/m.holdRequired;if(m.escortIds.length)return m.escortIds.filter(id=>{const u=e.units.find(u=>u.id===id);return u.hp>0&&near(u,e.goal)<=1;}).length/m.escortIds.length;const army=e.units.filter(u=>u.side==='enemy');return army.length?army.filter(u=>u.hp<=0).length/army.length:0;}

@@ -18,7 +18,7 @@ export const BATTLE_SCENARIOS={
   'ch8-ferry':{mode:'extract',goal:[7,3],map:map('...~....','...~....','...~.^..','===f====','...~....','...f....','...~....','...~....'),enemies:[[6,1,'archer'],[6,4,'raider'],[5,7,'infantry']]},
   'ch8-crossing':{mode:'hold',goal:[4,4],hold:4,map:map('..~.....','..~..^..','..~.....','==f=====','..~.....','..f.....','..~...^.','..~.....'),enemies:[[6,1,'archer'],[6,4,'infantry'],[6,6,'raider']],waves:[{turn:3,x:7,y:4,role:'cavalry'}]},
   'ch9-wing':{mode:'clear',goal:[6,4],map:map('........','....^^..','...XX...','====....','........','..^^....','........','...XX...'),enemies:[[6,1,'cavalry'],[6,3,'archer'],[6,5,'cavalry'],[5,7,'infantry']]},
-  'ch9-city':{mode:'capture',goal:[6,3],points:[[6,3]],map:map('....#...','....#...','....#...','====ssss','....#...','..^.#...','........','........'),enemies:[[5,2,'guard'],[6,3,'infantry'],[6,5,'archer']]},
+  'ch9-city':{mode:'capture',goal:[6,3],points:[[5,1],[6,5]],map:map('....#...','....#...','....#...','====ssss','....#...','..^.#...','........','........'),enemies:[[5,2,'guard'],[6,3,'infantry'],[6,5,'archer']]},
   'ch10-road':{mode:'supply',goal:[2,3],hold:4,points:[[5,1],[5,6]],map:map('...~....','...f====','...~..^.','sss~....','===f====','...~....','...f====','...~....'),enemies:[[6,1,'raider'],[6,4,'archer'],[6,6,'raider']],waves:[{turn:4,x:7,y:4,role:'raider'}]},
   'ch12-confrontation':{mode:'clear',goal:[6,3],map:map('.....#..','..^..#..','.....#..','========','.....#..','..^..#..','........','........')}
 };

@@ -15,6 +15,42 @@ export function selectedCommand({selected, action, target, formation, orderActio
   return {unitId:selected, action, x:target.x, y:target.y, ...(target.unitId ? {targetId:target.unitId} : {}), formation, orderAction};
 }
 
+export function previewBadge(state, command) {
+  const checked = command ? Game.preview(state, command) : null;
+  if (!checked?.ok) return null;
+  if (checked.forecast) {
+    const s = checked.forecast.stanceChanges?.[0], r = checked.forecast.resolveChanges?.[0];
+    return s ? `Stance ${s.from}→${s.to}` : r ? `Resolve ${r.from}→${r.to}` : `Support ${checked.forecast.votesBefore}→${checked.forecast.votesAfter}`;
+  }
+  const dmg = checked.message.match(/(\d+) damage/);
+  if (dmg) return `−${dmg[1]} HP${/Flank/i.test(checked.message) ? ' · Flank' : ''}`;
+  if (command.action === 'move') return `${command.x + 1}${String.fromCharCode(65 + command.y)}`;
+  return actionNames[command.action] || command.action;
+}
+
+export function resolveBoardPoint(state, selected, action, p) {
+  const e = state?.encounter;
+  if (!e || p.x < 0 || p.y < 0 || p.x >= e.width || p.y >= e.height) return null;
+  const actor = selectedActor(state, selected);
+  if (action) {
+    const t = Game.getTargets(state, actor.id, action).find(t => t.x === p.x && t.y === p.y);
+    if (t) return {selected: actor.id, action, target: t};
+  }
+  const friendly = e.units.find(u => ['player', 'ally'].includes(u.side) && u.x === p.x && u.y === p.y && (u.resolve ?? u.hp) > 0);
+  if (!action && friendly && friendly.id !== actor.id) return {selected: friendly.id, action: null, target: null};
+  if (!action) {
+    const available = Game.getActions(state, actor.id);
+    const priority = e.kind === 'contest' ? ['persuade', 'record', 'promise', 'rebut', 'denounce', 'threaten', 'move'] : e.type === 'training' ? [...['move', 'throw', 'strike', 'brace'].filter(a => !e.usedAbilities?.includes(a)), 'strike', 'throw', 'move', 'brace'] : ['strike', 'throw', 'assist', 'move'];
+    for (const candidate of priority) {
+      if (!available.includes(candidate)) continue;
+      const t = Game.getTargets(state, actor.id, candidate).find(t => t.x === p.x && t.y === p.y);
+      if (t) return {selected: actor.id, action: candidate, target: t};
+    }
+  }
+  if (friendly) return {selected: friendly.id, action: null, target: null};
+  return {selected: actor.id, action, target: null, error: action ? 'That tile is not a legal target. Choose a highlighted tile or use the target list.' : `Tile ${p.x + 1}${String.fromCharCode(65 + p.y)}. Choose a highlighted tile or an action below.`};
+}
+
 export function targetName(state, target) {
   const unit = state.encounter.units.find(u => u.id === target.unitId);
   return `${unit?.name || target.label || terrainLabel(state.encounter,target)} · ${target.x + 1}${String.fromCharCode(65 + target.y)}${target.cost!==undefined?` · ${target.cost} movement`:''}${unit?.stance !== undefined ? ` · stance ${unit.stance}` : ''}${unit?.interest ? ` · ${unit.interest}` : ''}`;

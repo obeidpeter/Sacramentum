@@ -2,7 +2,7 @@ import {esc,roman} from './view-helpers.js';
 import {createCampaignViews} from './campaign-views.js';
 import {createPanels} from './panels.js';
 import {createRenderScheduler,prepareShareCard} from './render-controller.js';
-import {encounterView,selectedActor,selectedCommand} from './encounter-view.js';
+import {encounterView,selectedActor,selectedCommand,previewBadge,resolveBoardPoint} from './encounter-view.js';
 import {createTurnReplay,turnReplaySteps} from './turn-replay.js';
 import {createSessionGate,commitReplacement} from './session-gate.js';
 import {watchEditionUpdates} from './offline-updates.js';
@@ -92,7 +92,7 @@ function paint(animation=null){
   if(document.hidden||screen==='title'||!state?.encounter)return;
   const canvas=document.querySelector('#battle-board');if(!canvas?.isConnected)return;
   const started=performance.now();
-  drawBattle(canvas,state.encounter,selected,targets(),focusTile,state.chapter,{action,target,animation,ambientTime,quality:graphics.mode,maxPixelRatio:graphics.profile.maxPixelRatio});
+  drawBattle(canvas,state.encounter,selected,targets(),focusTile,state.chapter,{action,target,badge:previewBadge(state,command()),animation,ambientTime,quality:graphics.mode,maxPixelRatio:graphics.profile.maxPixelRatio});
   graphics.recordFrame(performance.now()-started,{hidden:document.hidden,active:true});
 }
 function updateLoadingStatus(){
@@ -116,7 +116,7 @@ function prepareChapterArt({retry=false,allowTitle=false}={}){
   requestCurrentChapter({allowTitle});updateLoadingStatus();
 }
 function bindBoard(){const board=document.querySelector('#battle-board');if(!board||!state.encounter)return;board.addEventListener('click',event=>{const p=pickTile(board,state.encounter,event.clientX,event.clientY);selectPoint(p);});board.addEventListener('keydown',event=>{const delta={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[event.key];if(delta){event.preventDefault();focusTile??={x:selectedUnit().x,y:selectedUnit().y};focusTile={x:Math.max(0,Math.min(state.encounter.width-1,focusTile.x+delta[0])),y:Math.max(0,Math.min(state.encounter.height-1,focusTile.y+delta[1]))};paint();announce(`Grid ${focusTile.x+1}${String.fromCharCode(65+focusTile.y)}. ${state.encounter.units.filter(u=>!u.hidden&&u.x===focusTile.x&&u.y===focusTile.y&&(u.resolve??u.hp)>0).map(u=>u.name).join(', ')}`);}if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPoint(focusTile||selectedUnit());}if(event.key==='Escape'){action=null;target=null;render();}});}
-function selectPoint(p){const e=state.encounter;if(p.x<0||p.y<0||p.x>=e.width||p.y>=e.height)return;focusTile={x:p.x,y:p.y};const t=targets().find(t=>t.x===p.x&&t.y===p.y);if(action&&t){target=t;render();announce(Game.preview(state,command()).message);return;}const u=e.units.find(u=>['player','ally'].includes(u.side)&&u.x===p.x&&u.y===p.y&&(u.resolve??u.hp)>0);if(u){selected=u.id;action=null;target=null;render();}else toast(action?'That tile is not a legal target. Choose a highlighted tile or use the target list.':`Tile ${p.x+1}${String.fromCharCode(65+p.y)}. Select a unit first.`);}
+function selectPoint(p){const resolved=resolveBoardPoint(state,selected,action,p);if(!resolved)return;focusTile={x:p.x,y:p.y};if(resolved.error){toast(resolved.error);return;}selected=resolved.selected;action=resolved.action;target=resolved.target;render();if(action&&target)announce(Game.preview(state,command()).message);}
 async function persist(){
   if(memoryOnly)return {ok:true};
   saving=true;

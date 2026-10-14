@@ -67,6 +67,7 @@ function tacticalOverlay(c,g,e,selected,targets,focus,options){const selectedUni
     if(attack){const s=Math.max(3,g.tw*.065);line(c,[[p.x-s,p.y-s*.5],[p.x+s,p.y+s*.5]],color,1.5);line(c,[[p.x+s,p.y-s*.5],[p.x-s,p.y+s*.5]],color,1.5);}else oval(c,p.x,p.y+g.th*.22,2.4,1.3,color);
   }
   for(const objective of (e.mission?.points?.length?e.mission.points:e.goal?[e.goal]:[])){const p=xy(g,objective.x,objective.y);polygon(c,diamond(g,p,2),'#bd995413','#725d3899',3.2);polygon(c,diamond(g,p,2),null,FIELD_COLORS.objective,1.8);const xx=p.x-g.tw*.26,yy=p.y+g.th*.13,ss=Math.min(1,g.tw/55);c.save();c.translate(xx,yy);c.scale(ss,ss);line(c,[[0,0],[0,-26]],'#6b573a',1.5);polygon(c,[[1,-25],[13,-22],[12,-12],[1,-15]],FIELD_COLORS.objective,IVORY,.7);line(c,[[4,-20],[10,-18]],'#f8ebcb',1);oval(c,0,-27,1.4,1.4,'#d9b975');if(objective.secured){c.fillStyle='#174e44';c.font='bold 14px system-ui';c.fillText('✓',12,-27);}c.restore();}
+  for(const wave of (e.mission?.waves??[]).filter(w=>!w.arrived)){const p=xy(g,wave.x,wave.y),ss=Math.min(1,g.tw/55);polygon(c,diamond(g,p,3),'#97382e18',FIELD_COLORS.enemy,1.4);c.save();c.translate(p.x,p.y-g.th*.12);c.scale(ss,ss);polygon(c,[[-5,-4],[5,-4],[0,4]],FIELD_COLORS.enemy,IVORY,.7);c.fillStyle=FIELD_COLORS.enemy;c.font='bold 9px system-ui';c.textAlign='center';c.fillText(`T${wave.turn}`,0,-7);c.restore();}
   if(options.target){
     const p=xy(g,options.target.x,options.target.y);
     polygon(c,diamond(g,p,3),'#f7e5aa44','#fff7d9',4);
@@ -74,6 +75,11 @@ function tacticalOverlay(c,g,e,selected,targets,focus,options){const selectedUni
     if(selectedUnit&&options.action==='move'){
       const path=previewPath(e,selectedUnit,options.target);c.save();c.setLineDash([4,3]);
       line(c,path.map(cell=>{const q=xy(g,cell.x,cell.y);return[q.x,q.y];}),FIELD_COLORS.selection,2);c.restore();
+    }
+    if(options.badge){
+      const bw=Math.max(44,String(options.badge).length*5.8+12),by=p.y+g.th*.32;
+      c.save();polygon(c,[[p.x-bw/2,by-8],[p.x+bw/2,by-8],[p.x+bw/2,by+8],[p.x-bw/2,by+8]],IVORY,FIELD_COLORS.selection,1.2);
+      c.fillStyle=INK;c.font='bold 9px system-ui';c.textAlign='center';c.fillText(String(options.badge),p.x,by+3);c.restore();
     }
   }
   if(selectedUnit&&((selectedUnit.resolve??selectedUnit.hp??1)>0)){const p=xy(g,selectedUnit.x,selectedUnit.y);polygon(c,diamond(g,p,1),'#175d6716',IVORY,3.5);polygon(c,diamond(g,p,1),null,FIELD_COLORS.selection,2);}

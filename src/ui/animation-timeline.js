@@ -72,11 +72,16 @@ export function buildEncounterTimeline(before,after,{command=null,quality='balan
   while(overlap&&!oldLog.slice(-overlap).every((line,i)=>line===newLog[i]))overlap--;
   const recordedEvents=newLog.length?newLog.slice(overlap):(!command||command.action==='endTurn'?after.turnEvents??[]:[]);
   for(const line of recordedEvents){
-    const match=after.units.filter(u=>visible(u)&&visible(previous.get(u.id))).sort((a,b)=>(b.name?.length??0)-(a.name?.length??0)).find(u=>u.name&&line.startsWith(u.name+' '));if(!match)continue;
-    const victim=after.units.find(u=>visible(u)&&u.id!==match.id&&u.name&&line.includes(u.name));
-    if(actionEvents.some(e=>e.actor.id===match.id&&['strike','throw'].includes(e.action)))continue;
-    if(/ (hits|strikes) /.test(line)&&victim)actionEvents.push({actor:match,target:victim,action:match.role==='archer'?'throw':'strike'});
-    else if(/ (attacks|challenges) /.test(line)&&victim)actionEvents.push({actor:match,target:victim,action:line.includes('Resolve')?'denounce':'persuade'});
+    const candidates=after.units.filter(u=>visible(u)&&visible(previous.get(u.id))&&u.name&&line.startsWith(u.name+' ')&&!actionEvents.some(e=>e.actor.id===u.id&&['strike','throw','denounce','persuade'].includes(e.action))).sort((a,b)=>(b.name?.length??0)-(a.name?.length??0));
+    if(!candidates.length)continue;
+    const rest=line.slice(candidates[0].name.length+1);
+    const victim=after.units.filter(u=>visible(u)&&u.name&&rest.includes(u.name)).sort((a,b)=>((a.resolve??a.hp??0)-(previous.get(a.id)?.resolve??previous.get(a.id)?.hp??0))-((b.resolve??b.hp??0)-(previous.get(b.id)?.resolve??previous.get(b.id)?.hp??0))||(b.name?.length??0)-(a.name?.length??0))[0];
+    if(!victim)continue;
+    const range=u=>u.role==='archer'||/ (attacks|challenges) /.test(line)?3:1;
+    const match=candidates.filter(u=>u.id!==victim.id).sort((a,b)=>Number(distance(b,victim)<=range(b))-Number(distance(a,victim)<=range(a))||distance(a,victim)-distance(b,victim))[0];
+    if(!match)continue;
+    if(/ (hits|strikes) /.test(line))actionEvents.push({actor:match,target:victim,action:match.role==='archer'?'throw':'strike'});
+    else if(/ (attacks|challenges) /.test(line))actionEvents.push({actor:match,target:victim,action:line.includes('Resolve')?'denounce':'persuade'});
   }
   const impactTimes=new Map(),impactSources=new Map();
   for(const event of actionEvents.slice(0,12)){

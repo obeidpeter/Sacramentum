@@ -32,15 +32,15 @@ Matched rendering benchmarks use unchanged v0.6 legal scene/action fixtures to i
 
 | Compressed package measure | Baseline bytes | Final bytes | Limit |
 | --- | ---: | ---: | ---: |
-| Initial shell | 318,580 | 327,315 | 2,000,000 |
-| Shell plus Chapter 1 | 1,286,671 | 1,292,052 | 2,000,000 |
-| Complete campaign | 1,991,422 | 1,980,194 | 2,000,000 |
+| Initial shell | 318,580 | 328,384 | 2,000,000 |
+| Shell plus Chapter 1 | 1,286,671 | 1,293,121 | 2,000,000 |
+| Complete campaign | 1,991,422 | 1,981,263 | 2,000,000 |
 
 Sizes are sums of per-file gzip output including the service worker, not a cold-network timing result. The decoded-art limit remains 24 entries / 24 MiB plus the separately bounded terrain canvas; diagnostic JS heap snapshots do not measure all decoded/GPU/browser memory.
 
 ## Gameplay and regression evidence
 
-The supplied final test run passed **247/247** tests, with zero failures, cancellations or skips. **9** asset/offline checks passed. New Game autoplay completed all **25 encounters**, all twelve chapters and the **Augustus** rank through successful legal commands: **213 turns**, encounter range **2–14**, non-training range **2–14**. This is one deterministic route, not measured human campaign duration or a claim about every possible strategy.
+The supplied final test run passed **247/247** tests, with zero failures, cancellations or skips. **9** asset/offline checks passed. New Game autoplay completed all **25 encounters**, all twelve chapters and the **Augustus** rank through successful legal commands: **215 turns**, encounter range **3–14**, non-training range **4–14**. This is one deterministic route, not measured human campaign duration or a claim about every possible strategy.
 
 A separate fresh source copy omitted both the production distribution and generated test fixtures. The preparation script regenerated all three fixture sets sequentially, then a direct Node test run passed **247/247** tests with exit code 0. Preparation was invoked from outside the project directory to verify path handling. This exercised the commands behind the new npm pretest hook, not an invocation of npm verify. The outer Python wrapper encountered a Windows console-encoding error after the successful Node process; its saved UTF-8 [test log](evidence/overhaul/clean-source-tests.txt) and [structured result](evidence/overhaul/clean-source.json) were checked independently. Generated fixtures remain excluded from the source archive and are rebuilt by npm test.
 
@@ -50,9 +50,9 @@ The diagnostic compares eight authored battle scenarios over seeds **17, 275, 91
 | --- | ---: | ---: | ---: |
 | Objective-aware | 22/24 → 21/24 | 7.79 → 7.38 | 58.75 → 56.67 |
 | Tactical | 23/24 → 24/24 | 8.13 → 7.71 | 61.29 → 61.29 |
-| Cautious opening (first road only) | 3/3 → 2/3 | 8.33 → 10.33 | 17.33 → 4.67 |
+| Cautious opening (first road only) | 3/3 → 3/3 | 8.33 → 9.67 | 17.33 → 6.67 |
 
-The tactical policy won all 24 current scenarios, while the simple policy lost three. The cautious opening policy regressed to two wins in three seeds; its repeated bracing is an onboarding follow-up, not evidence that beginners are well served. Some scenarios tie or take longer with tactical play. These results do not measure enjoyment. The default legal campaign changed from **204 to 213 turns**; several encounters remain below the 8–15-turn design target.
+The tactical policy won all 24 current scenarios, while the simple policy lost three. The cautious opening policy wins all three seeds when it advances while healthy and finishes wounded adjacent attackers before bracing. Some scenarios tie or take longer with tactical play. These results do not measure enjoyment. The default legal campaign changed from **204 to 215 turns** (with the two-point Chapter IX city assault taking 4 turns); several encounters remain below the 8–15-turn design target.
 
 Political diagnostics ran **48 scenarios**: saved v1 and current v2 rules, six Contests, moderate/zero-support profiles and two declared policies. **48/48** won, including **24/24** current-rule runs. Five Promise-enabled Contests supported both debt-free arguments and a promised coalition in these profiles. Chapter VII has no Promise ability, so its two policy labels converge and are not counted as distinct approaches. Current promised coalitions incurred **4–6 supplies** of future debt; debt-free runs incurred none. These are injected scenarios at seed 275 with legality-enforced commands, not a complete human playthrough or broad balance proof. The [scenario record](evidence/overhaul/political-approaches.json) retains exact votes, actions, costs and command traces.
 

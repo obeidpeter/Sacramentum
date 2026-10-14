@@ -54,7 +54,7 @@ function contestActionScore(state,unit,action,target,approach){const e=state.enc
   if(action==='denounce')return needed+(member.resolve>0?member.resolve<=4?13:7:0)+(approach==='record'?3:0);
   if(action==='rebut')return needed+(member.side==='enemy'?(member.blunted?-5:2):Math.min(4,member.maxResolve-member.resolve)*2.1+(member.resolve<=6?14:0));
   if(!member||member.role!=='voter')return -100;
-  const delta=speechStrength(state,action,member),next=shiftedStance(member,delta),gain=next-member.stance;
+  const delta=speechStrength(state,action,member,unit),next=shiftedStance(member,delta),gain=next-member.stance;
   return needed+(member.stance<1&&next>=1?9:0)+gain*(member.stance<3?1:.4)+(action==='promise'?(approach==='coalition'?3:-2):0)+(action==='threaten'?-5:0)+(action==='record'&&approach==='record'?2:0);
 }
 function contestTurn(state,approach){const e=state.encounter;

@@ -254,7 +254,8 @@ export function checkBattle(state,atTurnEnd=false){if(!state.encounter.mission)r
  else if(m.mode==='recover')objective=used('scout')&&nearGoal;
  else if(m.mode==='extract')objective=m.escortIds.every(id=>{const u=e.units.find(v=>v.id===id);return u.escorted&&distance(u,e.goal)<=1;})&&nearGoal&&m.holdProgress>=m.holdRequired;
  else if(m.mode==='hold')objective=m.holdProgress>=m.holdRequired&&!foes(e).some(u=>distance(u,e.goal)<=1);
- else if(m.mode==='capture'||m.mode==='supply')objective=m.points.every(p=>p.secured)&&e.defence>0;
+ else if(m.mode==='capture')objective=m.points.every(p=>p.secured)&&e.defence>0;
+ else if(m.mode==='supply')objective=m.points.every(p=>p.secured)&&e.defence>0&&(e.combatVersion!==2||m.waves.every(w=>w.arrived)&&!foes(e).some(u=>distance(u,e.goal)<=1));
  else if(m.mode==='defection')objective=(e.defections??0)>=Math.min(3,e.units.filter(u=>u.id.startsWith('enemy')).length)||foes(e).length===0;
  else if(m.mode==='settlement')objective=m.envoyProgress>=2;
  else if(m.mode==='surrender')objective=m.points.every(p=>p.secured)&&nearGoal;

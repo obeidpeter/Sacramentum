@@ -58,9 +58,11 @@ test('Political speech, changed stance and Resolve withdrawal share the same tim
   after.units[2].resolve=after.units[2].hp=0;const denounce=buildEncounterTimeline(before,after,{command:{unitId:'hero',action:'denounce',targetId:'rival'}});assert.ok(denounce.tracks.some(t=>t.unitId==='rival'&&t.pose==='retreat'));assert.equal(denounce.effects.filter(e=>e.type==='impact'&&e.at.x===3).length,1);
 });
 
-test('Recorded NPC attacks animate their named actor, including an ordered ally acting inside a player command',()=>{
+test('Recorded NPC attacks animate their named actor, including same-name enemies in range and ordered allies',()=>{
   const before=encounter([unit('hero',0,3),unit('Lucan',2,3,{side:'ally'}),unit('Goth',3,3)]),after=clone(before);before.log=Array(70).fill('old');after.log=[...before.log.slice(2),'Lucan strikes Goth for 3.','Order executed.'];after.units[2].hp=9;
   const timeline=buildEncounterTimeline(before,after,{command:{unitId:'hero',action:'order',targetId:'Lucan'}});assert.ok(timeline.tracks.some(t=>t.unitId==='Lucan'&&t.pose==='attack'));assert.ok(timeline.tracks.some(t=>t.unitId==='hero'&&t.pose==='order'));
+  const dupBefore=encounter([unit('hero',1,3,{name:'Aurelius'}),unit('eFar',6,1,{name:'Gothic raider'}),unit('eNear',2,3,{name:'Gothic raider'})]),dupAfter=clone(dupBefore);dupAfter.units[0].hp=9;dupAfter.turnEvents=['Gothic raider strikes Aurelius for 3.'];
+  const dupTimeline=buildEncounterTimeline(dupBefore,dupAfter,{command:{action:'endTurn'}});assert.ok(dupTimeline.tracks.some(t=>t.unitId==='eNear'&&t.pose==='attack'));assert.ok(!dupTimeline.tracks.some(t=>t.unitId==='eFar'&&t.pose==='attack'));
 });
 
 test('Hidden units and unrelated encounters cannot leak into animation tracks or effects',()=>{
