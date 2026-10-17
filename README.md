@@ -1,4 +1,8 @@
-# SACRAMENTUM: From Recruit to Emperor
+# IMPERIUM: From Recruit to Emperor
+
+Repository: [obeidpeter/Imperium](https://github.com/obeidpeter/Imperium). Open the [Replit workspace](https://replit.com/replid/df0c0975-f1c4-4ca6-830f-73558db821b6); this is an editor link, not a claim of a published deployment.
+
+The game was previously named Sacramentum. Existing campaign saves, settings, offline-cache identifiers and `SAC1` save codes remain compatible. The historical military oath, original source-document names, artwork prompts, archived reports and their recorded paths keep their original wording.
 
 ![Historical Senate screenshot from version 0.4](docs/images/graphics-gameplay.png)
 
@@ -34,7 +38,7 @@ The underlying 0.4 artwork remains: faction-specific figures, layered battlefiel
 
 ## Play locally
 
-Use Node.js 20 or later. Open a terminal in the `Sacramentum` project directory. There is no `npm install` step.
+Use Node.js 20 or later. Open a terminal in the `Imperium` project directory. There is no `npm install` step.
 
 ```sh
 node scripts/serve.mjs

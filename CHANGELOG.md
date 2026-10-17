@@ -1,5 +1,10 @@
 # Changelog
 
+## Project rename — Imperium
+
+- Renames the visible game, installable-app name, package metadata, share/download labels and active guide headings to Imperium. Links the renamed repository and the stable Replit workspace.
+- Preserves the current default-branch game and artwork, existing save/settings/cache identifiers, save-code format, historical oath and original provenance/evidence records.
+
 ## 0.7.0 — tactical and political overhaul
 
 - Revised Standard combat uses role- and objective-aware planning, symmetric morale, engagement that stops movement on entering a visible melee threat, and a controlled Withdraw order. Formation cohesion, facing, ranged height and cavalry approaches affect exact damage previews. Chapter IX’s city assault requires securing both bastion approaches, and Chapter X’s grain road requires holding against arriving raiders.

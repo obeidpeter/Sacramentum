@@ -1,4 +1,4 @@
-# Sacramentum contributor guide
+# Imperium contributor guide
 
 The source project is a static, single-player browser game. Read [reference requirements](docs/reference-requirements.md), [historical notes](docs/historical-research.md), the Contest rules sheet and the verification summary before changing game behaviour.
 

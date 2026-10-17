@@ -8,7 +8,7 @@ The optimized images are bundled locally; gameplay has no runtime image-generati
 
 No third-party photographs, font files, music recordings or sound recordings are bundled. System fonts are rendered by the device; the project does not distribute those font files.
 
-The source and narrative were prepared for this Sacramentum build. A source-code distribution license and copyright-holder declaration have not been selected here. Making the game free to play does not by itself grant a license to redistribute its source. The repository owner should choose the appropriate license before any public source release; this notice does not assert ownership or invent a license grant.
+The source and narrative were prepared for this Imperium build. A source-code distribution license and copyright-holder declaration have not been selected here. Making the game free to play does not by itself grant a license to redistribute its source. The repository owner should choose the appropriate license before any public source release; this notice does not assert ownership or invent a license grant.
 
 The current package declares no third-party runtime dependencies. Node.js and the user's browser are execution tools and are not included in the game distribution. If packages, font files, audio or supplied art are added later, record their exact versions, provenance and applicable licenses here and include any required license text.
 

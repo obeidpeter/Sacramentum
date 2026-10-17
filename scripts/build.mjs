@@ -7,7 +7,7 @@ import {chapterAssets} from '../src/ui/art.js';
 const root=resolve('.'),dist=resolve(root,'dist');
 const packageInfo=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
 // Delete only the reproducible output after checking its absolute boundary.
-if(dirname(dist)!==root||basename(dist)!=='dist'||packageInfo.name!=='sacramentum')throw new Error('Run the build from the Sacramentum project root.');
+if(dirname(dist)!==root||basename(dist)!=='dist'||packageInfo.name!=='imperium')throw new Error('Run the build from the Imperium project root.');
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
 for(const file of ['index.html','icon.svg','manifest.webmanifest','src','icons','assets'])await cp(join(root,file),join(dist,file),{recursive:true,filter:path=>!path.endsWith('debug.js')});
 const raw=process.env.SITE_URL||'';let siteUrl='';
